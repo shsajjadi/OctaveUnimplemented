@@ -57,35 +57,50 @@ namespace image
     return result;
   }
 
-  template <typename ResultType, typename ImageType >
+  template <typename ResultType, typename  IndexType, typename ImageType >
   class GrayDist2D
   {
   public:
 
     using element_type = std::pair<octave_idx_type, typename ResultType::element_type>;
 
-    GrayDist2D (const ImageType& image, const boolNDArray & mask, const std::string& method = "chessboard")
+    GrayDist2D (const ImageType& image, int nargout, const boolNDArray & mask, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
           init_mask2D();
           initialize_from_seed (mask);
           do_graydist();
+          
         }
 
     }
 
-    GrayDist2D (const ImageType& image, const Array<octave_idx_type> & C, const Array<octave_idx_type> & R, const std::string& method = "chessboard")
+    GrayDist2D (const ImageType& image, int nargout, const Array<octave_idx_type> & C, const Array<octave_idx_type> & R, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
@@ -95,12 +110,19 @@ namespace image
         }
     }
 
-    GrayDist2D (const ImageType& image, const Array<octave_idx_type> & ind, const std::string& method = "chessboard")
+    GrayDist2D (const ImageType& image, int nargout, const Array<octave_idx_type> & ind, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
@@ -115,7 +137,13 @@ namespace image
     {
       return dist_mat;
     }
-
+    
+    octave_value_list 
+    get_result ()
+    {
+      return ovl (octave_value (value ()), octave_value (idx_segment), octave_value (idx_predecessor));
+    }
+    
   private:
 
     struct PointCmp
@@ -142,7 +170,7 @@ namespace image
         }
       else
         {
-          error ("garydist: unregignized distance metric");
+          error ("graydist: unregignized distance metric");
         }
     }
 
@@ -160,11 +188,27 @@ namespace image
 
       Q = std::priority_queue<element_type, std::vector<element_type>, PointCmp>
       {PointCmp{}, std::move(cache)};
-
-      for (octave_idx_type i = 0; i < ind.numel () ; i++)
+      
+      try
         {
-          dist_mat(ind(i)-1) = 0;
-          Q.push({ind(i)-1, 0});
+          for (octave_idx_type i = 0; i < ind.numel () ; i++)
+            {
+              dist_mat.checkelem(ind(i)-1) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(ind(i)-1) = ind(i)-1;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(ind(i)-1) = 0;
+                } 
+                
+              Q.push({ind(i)-1, 0});
+            }
+        }
+      catch (...)
+        {
+          error ("out of range seed values");
         }
     }
 
@@ -187,12 +231,29 @@ namespace image
       {PointCmp{}, std::move(cache)};
 
       const dim_vector& dim = f.dims();
-
-      for (octave_idx_type i = 0; i < C.numel () ; i++)
+      
+      try
         {
-          octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
-          dist_mat(ind) = 0;
-          Q.push({ind, 0});
+          for (octave_idx_type i = 0; i < C.numel () ; i++)
+            {
+              octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
+              
+              dist_mat(ind) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(ind) = ind;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(ind) = 0;
+                } 
+              
+              Q.push({ind, 0});
+            }
+        }
+      catch (...)
+        {
+          error ("out of range seed values");
         }
     }
 
@@ -226,6 +287,15 @@ namespace image
           if (mask.xelem(i))
             {
               dist_mat(i) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(i) = i;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(i) = 0;
+                } 
+                
               Q.push({i, 0});
             }
         }
@@ -326,7 +396,7 @@ namespace image
       inheap[dim1*dim2 - 1] = 9;
     }
 
-    void do_garydist1D ()
+    void do_graydist1D ()
     {
       octave_idx_type n = f.numel ();
 
@@ -358,7 +428,15 @@ namespace image
                   if (alt < dist[v])
                     {
                       dist[v] = alt;
-
+                      
+                      if (nargout >= 2)
+                        {
+                          idx_segment.xelem(v) = idx_segment.xelem(u.first);
+                          
+                          if (nargout == 3)
+                            idx_predecessor.xelem(v) = u.first;
+                        }                      
+                      
                       Q.push({v, alt});
                     }
                 }
@@ -366,7 +444,7 @@ namespace image
         }
     }
 
-    void do_garydist2D ()
+    void do_graydist2D ()
     {
       const octave_idx_type dim1 = f.dim1();
 
@@ -410,7 +488,15 @@ namespace image
                       if (alt < dist[v])
                         {
                           dist[v] = alt;
-
+                          
+                          if (nargout >= 2)
+                            {
+                              idx_segment.xelem(v) = idx_segment.xelem(u.first);
+                          
+                              if (nargout == 3)
+                                idx_predecessor.xelem(v) = u.first;
+                            }     
+                                 
                           Q.push({v, alt});
                         }
                     }
@@ -455,7 +541,15 @@ namespace image
                       if (alt < dist[v])
                         {
                           dist[v] = alt;
-
+                          
+                          if (nargout >= 2)
+                            {
+                              idx_segment.xelem(v) = idx_segment.xelem(u.first);
+                          
+                              if (nargout == 3)
+                                idx_predecessor.xelem(v) = u.first;
+                            }          
+                            
                           Q.push({v, alt});
                         }
                     }
@@ -474,17 +568,23 @@ namespace image
 
       if (dim1 == 1 || dim2 == 1)
         {
-           do_garydist1D ();
+           do_graydist1D ();
         }
       else
         {
-           do_garydist2D ();
+           do_graydist2D ();
         }
     }
 
     ImageType f;
+    
+    const int nargout;
 
     ResultType dist_mat;
+    
+    IndexType idx_segment;
+    
+    IndexType idx_predecessor;
 
     std::priority_queue<std::pair<octave_idx_type, typename ResultType::element_type>,std::vector<std::pair<octave_idx_type, typename ResultType::element_type>>, PointCmp> Q;
 
@@ -493,7 +593,7 @@ namespace image
     distance_type method;
   };
 
-  template <typename ResultType, typename ImageType>
+  template <typename ResultType, typename  IndexType, typename ImageType>
   class GrayDistND
   {
   public:
@@ -512,12 +612,19 @@ namespace image
       {return a.imageval > b.imageval;}
     };
 
-    GrayDistND (const ImageType& image, const boolNDArray & mask, const std::string& method = "chessboard")
+    GrayDistND (const ImageType& image, int nargout, const boolNDArray & mask, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -526,12 +633,19 @@ namespace image
         }
 
     }
-    GrayDistND (const ImageType& image, const Array<octave_idx_type> & C, const Array<octave_idx_type> & R, const std::string& method = "chessboard")
+    GrayDistND (const ImageType& image, int nargout, const Array<octave_idx_type> & C, const Array<octave_idx_type> & R, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -540,13 +654,19 @@ namespace image
         }
     }
 
-    GrayDistND (const ImageType& image, const Array<octave_idx_type> & ind, const std::string& method = "chessboard")
+    GrayDistND (const ImageType& image, int nargout, const Array<octave_idx_type> & ind, const std::string& method = "chessboard")
+    : f(), nargout (nargout)
     {
-
       dist_mat = ResultType(image.dims(), numeric_limits<typename ResultType::element_type>::infinity());
 
       if (image.numel () != 0)
         {
+          if (nargout >= 2)
+                idx_segment = IndexType (image.dims ());
+
+          if (nargout == 3)
+                idx_predecessor = IndexType (image.dims ());
+            
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -560,7 +680,13 @@ namespace image
     {
       return dist_mat;
     }
-
+    
+    octave_value_list 
+    get_result ()
+    {
+      return ovl (octave_value (value ()), octave_value (idx_segment), octave_value (idx_predecessor));
+    }
+    
   private:
 
     octave_idx_type
@@ -620,7 +746,7 @@ namespace image
         }
       else
         {
-          error ("garydist: unregignized distance metric");
+          error ("graydist: unregignized distance metric");
         }
     }
 
@@ -638,11 +764,26 @@ namespace image
 
       auto cum = create_cumulative_dims(dim, dim+2);
 
-      for (octave_idx_type i = 0; i < ind.numel () ; i++)
+      try
         {
-          dist_mat(ind(i)-1) = 0;
-
-          Q.push({image_to_mask_index (ind(i)-1,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind(i)-1, 0});
+          for (octave_idx_type i = 0; i < ind.numel () ; i++)
+            {
+              dist_mat.checkelem(ind(i)-1) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(ind(i)-1) = ind(i)-1;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(ind(i)-1) = 0;
+                }   
+                
+              Q.push({image_to_mask_index (ind(i)-1,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind(i)-1, 0});
+            }
+        }
+      catch (...)
+        {
+          error ("out of range seed values");
         }
     }
 
@@ -658,16 +799,33 @@ namespace image
 
       cache.reserve(dim.numel() - (dim+(-2)).numel());
 
-       Q =std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND>
+       Q = std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND>
          {PointCmpND{}, std::move(cache)};
 
       auto cum = create_cumulative_dims(dim, dim+2);
 
-      for (octave_idx_type i = 0; i < C.numel () ; i++)
+      try
         {
-          octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
-          dist_mat(ind) = 0;
-          Q.push({image_to_mask_index (ind,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind, 0});
+          for (octave_idx_type i = 0; i < C.numel () ; i++)
+            {
+              octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
+              
+              dist_mat(ind) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(ind) = ind;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(ind) = 0;
+                } 
+                
+              Q.push({image_to_mask_index (ind,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind, 0});
+            }
+        }
+      catch (...)
+        {
+          error ("out of range seed values");
         }
     }
 
@@ -683,7 +841,7 @@ namespace image
 
       cache.reserve(dim.numel() - (dim+(-2)).numel());
 
-      Q =std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND>
+      Q = std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND>
          {PointCmpND{}, std::move(cache)};
 
       auto cum = create_cumulative_dims(dim, dim+2);
@@ -693,6 +851,14 @@ namespace image
           if (mask.xelem(i))
             {
               dist_mat(i) = 0;
+              
+              if (nargout >= 2)
+                {
+                  idx_segment.xelem(i) = i;
+                          
+                  if (nargout == 3)
+                    idx_predecessor.xelem(i) = 0;
+                } 
               Q.push({image_to_mask_index (i,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), i, 0});
             }
         }
@@ -909,6 +1075,14 @@ namespace image
                       if (alt < dist[vimage])
                         {
                           dist[vimage] = alt;
+                          
+                          if (nargout >= 2)
+                            {
+                              idx_segment.xelem(vimage) = idx_segment.xelem(u.imageindex);
+                          
+                              if (nargout == 3)
+                                idx_predecessor.xelem(vimage) = u.imageindex;
+                            }          
 
                           Q.push({vmask, vimage, alt});
                         }
@@ -950,6 +1124,14 @@ namespace image
                       if (alt < dist[vimage])
                         {
                           dist[vimage] = alt;
+                          
+                          if (nargout >= 2)
+                            {
+                              idx_segment.xelem(vimage) = idx_segment.xelem(u.imageindex);
+                          
+                              if (nargout == 3)
+                                idx_predecessor.xelem(vimage) = u.imageindex;
+                            }        
 
                           Q.push({vmask, vimage, alt});
                         }
@@ -962,9 +1144,15 @@ namespace image
     }
 
     ImageType f;
+    
+    const int nargout;
 
     ResultType dist_mat;
-
+    
+    IndexType idx_segment;
+    
+    IndexType idx_predecessor;
+    
     std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND> Q;
 
     std::vector<bool> inheap;
@@ -972,65 +1160,123 @@ namespace image
     distance_type method;
   };
 
-  template <typename ResultType, typename ImageType,  typename ... Args>
-  octave_value_list do_graydist (const ImageType& image, Args...args)
+  template <typename ResultType, typename IndexType, typename ImageType,  typename ... Args>
+  octave_value_list do_graydist (const ImageType& image, int nargout, Args...args)
   {
     const ImageType im = image.squeeze();
+    
+    octave_value_list retval;
 
     if (im.ndims () <= 2)
-      return octave_value(GrayDist2D<ResultType, ImageType>(im, args...).value ().reshape (image.dims ()));
+      retval = GrayDist2D<ResultType, IndexType, ImageType>(im, nargout, args...).get_result ();
     else
-      return octave_value(GrayDistND<ResultType, ImageType>(im, args...).value ().reshape (image.dims ()));
+      retval = GrayDistND<ResultType, IndexType, ImageType>(im, nargout, args...).get_result ();
+    
+    retval(0) = retval(0).reshape(image.dims ());
+    
+    if (nargout >= 2)
+      retval(1) = retval(1).reshape(image.dims ());
+    
+    if (nargout >= 3)
+      retval(2) = retval(2).reshape(image.dims ());
+    
+    return retval;
   }
 
-  template <typename ResultType, typename ImageType,  typename ... Args>
-  octave_value_list dispatch4 (const octave_value_list& unprocessed_args,int n,const ImageType& image, Args...args)
+  template <typename ResultType, typename IndexType, typename ImageType,  typename ... Args>
+  octave_value_list dispatch4 (const octave_value_list& unprocessed_args,int n,const ImageType& image, int nargout, Args...args)
   {
     octave_idx_type nargin = unprocessed_args.length ();
 
     if (nargin == 4)
       {
         if (unprocessed_args(n).is_string ())
-          return do_graydist< ResultType> (image, args..., unprocessed_args(n).string_value ());
+          return do_graydist<ResultType, IndexType> (image, nargout, args..., unprocessed_args(n).string_value ());
         else
           error ("invalid type for 'method'");
       }
     else
-      return do_graydist< ResultType> (image, args...);
+      return do_graydist<ResultType, IndexType> (image, nargout, args...);
   }
 
-  template <typename ResultType, typename ImageType,  typename ... Args>
-  octave_value_list dispatch3 (const octave_value_list& unprocessed_args,int n,const ImageType& image, Args...args)
+  template <typename ResultType, typename IndexType, typename ImageType,  typename ... Args>
+  octave_value_list dispatch3 (const octave_value_list& unprocessed_args,int n,const ImageType& image, int nargout, Args...args)
   {
     octave_idx_type nargin = unprocessed_args.length ();
 
     if (nargin >= 3 && n < 3)
       {
         if (unprocessed_args(n).is_string ())
-          return do_graydist< ResultType> (image, args..., unprocessed_args(n).string_value ());
+          return do_graydist< ResultType, IndexType> (image, nargout, args..., unprocessed_args(n).string_value ());
         else if (unprocessed_args(n).isnumeric ())
-          return dispatch4< ResultType> (unprocessed_args, n+1,image, args...,  unprocessed_args(n).octave_idx_type_vector_value ());
+          return dispatch4< ResultType, IndexType> (unprocessed_args, n+1, image, nargout, args...,  unprocessed_args(n).octave_idx_type_vector_value ());
         else
           error ("invalid type for argument number %s", std::to_string (n+1).c_str ());
       }
     else
-      return do_graydist< ResultType> (image, args...);
+      return do_graydist<ResultType, IndexType> (image, nargout, args...);
   }
 
-  template < typename ResultType, typename ImageType,typename ... Args>
-  octave_value_list dispatch2 (const octave_value_list& unprocessed_args,int n,const ImageType& image, Args...args)
+  template < typename ResultType, typename IndexType, typename ImageType, typename ... Args>
+  octave_value_list dispatch2 (const octave_value_list& unprocessed_args,int n,const ImageType& image, int nargout, Args...args)
   {
     octave_idx_type nargin = unprocessed_args.length ();
 
     if (nargin >= 2 && n < 2)
       {
         if (unprocessed_args(n).islogical ())
-          return dispatch3< ResultType> (unprocessed_args, n+1, image, args..., unprocessed_args(n).bool_array_value ());
+          return dispatch3< ResultType,IndexType> (unprocessed_args, n+1, image, nargout, args..., unprocessed_args(n).bool_array_value ());
         else if (unprocessed_args(n).isnumeric ())
-          return dispatch3< ResultType> (unprocessed_args, n+1,image, args...,  unprocessed_args(n).octave_idx_type_vector_value ());
+          return dispatch3< ResultType,IndexType> (unprocessed_args, n+1,image, nargout, args...,  unprocessed_args(n).octave_idx_type_vector_value ());
         else
           error ("invalid type for argument number %s", std::to_string (n+1).c_str ());
       }
+  }
+  
+  template <typename IndexType>
+  octave_value_list dispatch (const octave_value_list& args, int nargout)
+  {
+    octave_idx_type nargin = args.length ();
+
+    if (nargin < 2 || nargin > 4)
+      error ("invalid number of arguments");
+
+    octave_value im = args(0);
+
+    if (im.islogical ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.bool_array_value (), nargout);
+    else if (im.is_int8_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.int8_array_value (), nargout);
+    else if (im.is_int16_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.int16_array_value (), nargout);
+    else if (im.is_int32_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.int32_array_value (), nargout);
+    else if (im.is_int64_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.int64_array_value (), nargout);
+    else if (im.is_uint8_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.uint8_array_value (), nargout);
+    else if (im.is_uint16_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.uint16_array_value (), nargout);
+    else if (im.is_uint32_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.uint32_array_value (), nargout);
+    else if (im.is_uint64_type ())
+      return image::dispatch2 < FloatNDArray,IndexType>(args, 1, im.uint64_array_value (), nargout);
+    else if (im.isreal ())
+      {
+        if (im.is_single_type ())
+          return image::dispatch2 < FloatNDArray,IndexType>(args, 1,im.float_array_value (), nargout);
+        else
+          return image::dispatch2 < NDArray,IndexType>(args, 1, im.array_value (), nargout);
+      }
+    else if (im.iscomplex ())
+      {
+        if (im.is_single_type ())
+          return image::dispatch2 < FloatComplexNDArray,IndexType>(args, 1, im.float_complex_array_value (), nargout);
+        else
+          return image::dispatch2 < ComplexNDArray,IndexType>(args, 1, im.complex_array_value (), nargout);
+      }
+    else
+      return octave_value_list ();
   }
 }
 
@@ -1040,6 +1286,8 @@ DEFUN_DLD (graydist, args, nargout,
 @deftypefnx {Loadable Function} {T =} graydist(@var{I}, @var{C}, @var{R})
 @deftypefnx {Loadable Function} {T =} graydist(@var{I}, @var{ind})
 @deftypefnx {Loadable Function} {T =} graydist(@var{___}, @var{method})
+@deftypefnx {Loadable Function} {[T, idx] =} graydist(@var{___})
+@deftypefnx {Loadable Function} {[T, idx, pred] =} graydist(@var{___})
 
 Compute gray weighted distance transform GWD of image.
 
@@ -1092,11 +1340,18 @@ sq2 1@ @ sq2@*
 where sq2 is equal to sqrt(2).
 @end table
 
-The type of @var{T} is double if the type of @var{I} is double. For other input types the type of output is single.
+@var{idx} is index of the nearest seed point. @*
+@var{pred} is the predecessor map. pred(a) is the predecessor of 'a' in the shortest paths tree (that starts from seed points). In other words 'a' is the nearest neghbor to pred(a). Its value in seed points is zero.@*
+The type of @var{T} is double if the type of @var{I} is double. For other input types the type of output is single.@*
+The type of @var{idx} and @var{pred} depends on the size of the image. For an image of size less than 2^32 it is 'uint32' .For larger images it is 'uint64'.
 
 [1] Fouard C., Gedda M. (2006) An Objective Comparison Between Gray Weighted Distance Transforms and Weighted Distance Transforms on Curved Spaces. In: Kuba A., Nyúl L.G., Palágyi K. (eds) Discrete Geometry for Computer Imagery. DGCI 2006. Lecture Notes in Computer Science, vol 4245. Springer, Berlin, Heidelberg.
+
+@seealso{bwdist, curvdist}
 @end deftypefn)helpdoc")
 {
+
+  
   octave_idx_type nargin = args.length ();
 
   if (nargin < 2 || nargin > 4)
@@ -1104,38 +1359,8 @@ The type of @var{T} is double if the type of @var{I} is double. For other input 
 
   octave_value im = args(0);
 
-  if (im.islogical ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.bool_array_value ());
-  else if (im.is_int8_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.int8_array_value ());
-  else if (im.is_int16_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.int16_array_value ());
-  else if (im.is_int32_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.int32_array_value ());
-  else if (im.is_int64_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.int64_array_value ());
-  else if (im.is_uint8_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.uint8_array_value ());
-  else if (im.is_uint16_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.uint16_array_value ());
-  else if (im.is_uint32_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.uint32_array_value ());
-  else if (im.is_uint64_type ())
-    return image::dispatch2 < FloatNDArray>(args, 1, im.uint64_array_value ());
-  else if (im.isreal ())
-    {
-      if (im.is_single_type ())
-        return image::dispatch2 < FloatNDArray>(args, 1,im.float_array_value ());
-      else
-        return image::dispatch2 < NDArray>(args, 1, im.array_value ());
-    }
-  else if (im.iscomplex ())
-    {
-      if (im.is_single_type ())
-        return image::dispatch2 < FloatComplexNDArray>(args, 1, im.float_complex_array_value ());
-      else
-        return image::dispatch2 < ComplexNDArray>(args, 1, im.complex_array_value ());
-    }
+  if (im.numel () <= 0xFFFFFFFF)
+    return image::dispatch<uint32NDArray>(args, nargout);
   else
-    return octave_value_list ();
+    return image::dispatch<uint64NDArray>(args, nargout);
 }
