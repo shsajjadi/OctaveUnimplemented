@@ -257,7 +257,7 @@ DEFUN_DLD (memory, args, nargout,
 
 Report memory information (Available only on Microsoft Windows)
 
-Without requestting any output the function will dispaly the following information:@*
+Without requesting any output the function will display the following information:@*
 Maximum Possible Array@*
 Memory Available for All Arrays@*
 Memory Used By Octave@*
