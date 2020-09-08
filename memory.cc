@@ -114,9 +114,9 @@ namespace memory
 
     if ((hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, ::GetCurrentProcessId ())) == NULL)
       {
-  			if ((hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, 0, ::GetCurrentProcessId ())) == NULL)
-  				{
-  					return {};
+        if ((hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, 0, ::GetCurrentProcessId ())) == NULL)
+          {
+            return {};
           }
       }
 
