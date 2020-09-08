@@ -45,7 +45,7 @@ namespace memory
   // MemUsedOctave = PagefileUsage + Protion of WorkingSet that is not part of  PagefileUsage
 
   size_t
-  non_private_woking_set (HANDLE hProcess, size_t page_size, const std::vector<std::pair <ULONG_PTR, SIZE_T>>& non_private_virtual)
+  non_private_working_set (HANDLE hProcess, size_t page_size, const std::vector<std::pair <ULONG_PTR, SIZE_T>>& non_private_virtual)
   {
     size_t pagecount = 0;
 
@@ -162,7 +162,7 @@ namespace memory
 
     ::GetProcessMemoryInfo (hProcess, std::addressof (memcounter), sizeof (memcounter));
 
-    size_t non_private_ws = non_private_woking_set (hProcess, perfinfo.PageSize, non_private_virtual);
+    size_t non_private_ws = non_private_working_set (hProcess, perfinfo.PageSize, non_private_virtual);
 
     size_t SystemMemoryAvailable =  (perfinfo.CommitLimit - perfinfo.CommitTotal) * perfinfo.PageSize;
 
