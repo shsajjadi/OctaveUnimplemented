@@ -6,3 +6,6 @@ Implementation of interesting functions currently missing in Octave.
   - [graydist](https://github.com/shsajjadi/OctaveUnimplemented/wiki/graydist) .................... gray weighted distance transform
 - memory
   - [memory](https://github.com/shsajjadi/OctaveUnimplemented/wiki/memory) .................... memory information
+- statistics
+  - [mink](https://github.com/shsajjadi/OctaveUnimplemented/wiki/mink) .................... k smallest elements
+  - [maxk](https://github.com/shsajjadi/OctaveUnimplemented/wiki/maxk) .................... k largest elements
