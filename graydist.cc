@@ -76,14 +76,14 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
           init_mask2D();
           initialize_from_seed (mask);
           do_graydist();
-          
+
         }
 
     }
@@ -100,7 +100,7 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
@@ -122,7 +122,7 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap = std::vector<char>  (image.numel (), (char)5);
@@ -137,13 +137,13 @@ namespace image
     {
       return dist_mat;
     }
-    
-    octave_value_list 
+
+    octave_value_list
     get_result ()
     {
       return ovl (octave_value (value ()), octave_value (idx_segment), octave_value (idx_predecessor));
     }
-    
+
   private:
 
     struct PointCmp
@@ -188,21 +188,21 @@ namespace image
 
       Q = std::priority_queue<element_type, std::vector<element_type>, PointCmp>
       {PointCmp{}, std::move(cache)};
-      
+
       try
         {
           for (octave_idx_type i = 0; i < ind.numel () ; i++)
             {
               dist_mat.checkelem(ind(i)-1) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(ind(i)-1) = ind(i)-1;
-                          
+                  idx_segment.xelem(ind(i)-1) = ind(i);
+
                   if (nargout == 3)
                     idx_predecessor.xelem(ind(i)-1) = 0;
-                } 
-                
+                }
+
               Q.push({ind(i)-1, 0});
             }
         }
@@ -231,23 +231,23 @@ namespace image
       {PointCmp{}, std::move(cache)};
 
       const dim_vector& dim = f.dims();
-      
+
       try
         {
           for (octave_idx_type i = 0; i < C.numel () ; i++)
             {
               octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
-              
+
               dist_mat(ind) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(ind) = ind;
-                          
+                  idx_segment.xelem(ind) = ind + 1;
+
                   if (nargout == 3)
                     idx_predecessor.xelem(ind) = 0;
-                } 
-              
+                }
+
               Q.push({ind, 0});
             }
         }
@@ -287,15 +287,15 @@ namespace image
           if (mask.xelem(i))
             {
               dist_mat(i) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(i) = i;
-                          
+                  idx_segment.xelem(i) = i + 1;
+
                   if (nargout == 3)
                     idx_predecessor.xelem(i) = 0;
-                } 
-                
+                }
+
               Q.push({i, 0});
             }
         }
@@ -428,15 +428,15 @@ namespace image
                   if (alt < dist[v])
                     {
                       dist[v] = alt;
-                      
+
                       if (nargout >= 2)
                         {
                           idx_segment.xelem(v) = idx_segment.xelem(u.first);
-                          
+
                           if (nargout == 3)
-                            idx_predecessor.xelem(v) = u.first;
-                        }                      
-                      
+                            idx_predecessor.xelem(v) = u.first + 1;
+                        }
+
                       Q.push({v, alt});
                     }
                 }
@@ -488,15 +488,15 @@ namespace image
                       if (alt < dist[v])
                         {
                           dist[v] = alt;
-                          
+
                           if (nargout >= 2)
                             {
                               idx_segment.xelem(v) = idx_segment.xelem(u.first);
-                          
+
                               if (nargout == 3)
-                                idx_predecessor.xelem(v) = u.first;
-                            }     
-                                 
+                                idx_predecessor.xelem(v) = u.first + 1;
+                            }
+
                           Q.push({v, alt});
                         }
                     }
@@ -541,15 +541,15 @@ namespace image
                       if (alt < dist[v])
                         {
                           dist[v] = alt;
-                          
+
                           if (nargout >= 2)
                             {
                               idx_segment.xelem(v) = idx_segment.xelem(u.first);
-                          
+
                               if (nargout == 3)
-                                idx_predecessor.xelem(v) = u.first;
-                            }          
-                            
+                                idx_predecessor.xelem(v) = u.first + 1;
+                            }
+
                           Q.push({v, alt});
                         }
                     }
@@ -577,13 +577,13 @@ namespace image
     }
 
     ImageType f;
-    
+
     const int nargout;
 
     ResultType dist_mat;
-    
+
     IndexType idx_segment;
-    
+
     IndexType idx_predecessor;
 
     std::priority_queue<std::pair<octave_idx_type, typename ResultType::element_type>,std::vector<std::pair<octave_idx_type, typename ResultType::element_type>>, PointCmp> Q;
@@ -624,7 +624,7 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -645,7 +645,7 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -666,7 +666,7 @@ namespace image
 
           if (nargout == 3)
                 idx_predecessor = IndexType (image.dims ());
-            
+
           f = image;
           init_method (method);
           inheap  = create_zero_padded_maskND (image.dims ());
@@ -680,13 +680,13 @@ namespace image
     {
       return dist_mat;
     }
-    
-    octave_value_list 
+
+    octave_value_list
     get_result ()
     {
       return ovl (octave_value (value ()), octave_value (idx_segment), octave_value (idx_predecessor));
     }
-    
+
   private:
 
     octave_idx_type
@@ -769,15 +769,15 @@ namespace image
           for (octave_idx_type i = 0; i < ind.numel () ; i++)
             {
               dist_mat.checkelem(ind(i)-1) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(ind(i)-1) = ind(i)-1;
-                          
+                  idx_segment.xelem(ind(i)-1) = ind(i);
+
                   if (nargout == 3)
                     idx_predecessor.xelem(ind(i)-1) = 0;
-                }   
-                
+                }
+
               Q.push({image_to_mask_index (ind(i)-1,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind(i)-1, 0});
             }
         }
@@ -809,17 +809,17 @@ namespace image
           for (octave_idx_type i = 0; i < C.numel () ; i++)
             {
               octave_idx_type ind = ::compute_index (R.xelem(i)-1, C.xelem(i)-1 , dim);
-              
+
               dist_mat(ind) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(ind) = ind;
-                          
+                  idx_segment.xelem(ind) = ind + 1;
+
                   if (nargout == 3)
                     idx_predecessor.xelem(ind) = 0;
-                } 
-                
+                }
+
               Q.push({image_to_mask_index (ind,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), ind, 0});
             }
         }
@@ -851,14 +851,14 @@ namespace image
           if (mask.xelem(i))
             {
               dist_mat(i) = 0;
-              
+
               if (nargout >= 2)
                 {
-                  idx_segment.xelem(i) = i;
-                          
+                  idx_segment.xelem(i) = i + 1;
+
                   if (nargout == 3)
                     idx_predecessor.xelem(i) = 0;
-                } 
+                }
               Q.push({image_to_mask_index (i,std::get<0>(cum), std::get<1>(cum),std::get<2>(cum)), i, 0});
             }
         }
@@ -1075,14 +1075,14 @@ namespace image
                       if (alt < dist[vimage])
                         {
                           dist[vimage] = alt;
-                          
+
                           if (nargout >= 2)
                             {
                               idx_segment.xelem(vimage) = idx_segment.xelem(u.imageindex);
-                          
+
                               if (nargout == 3)
-                                idx_predecessor.xelem(vimage) = u.imageindex;
-                            }          
+                                idx_predecessor.xelem(vimage) = u.imageindex + 1;
+                            }
 
                           Q.push({vmask, vimage, alt});
                         }
@@ -1124,14 +1124,14 @@ namespace image
                       if (alt < dist[vimage])
                         {
                           dist[vimage] = alt;
-                          
+
                           if (nargout >= 2)
                             {
                               idx_segment.xelem(vimage) = idx_segment.xelem(u.imageindex);
-                          
+
                               if (nargout == 3)
-                                idx_predecessor.xelem(vimage) = u.imageindex;
-                            }        
+                                idx_predecessor.xelem(vimage) = u.imageindex + 1;
+                            }
 
                           Q.push({vmask, vimage, alt});
                         }
@@ -1144,15 +1144,15 @@ namespace image
     }
 
     ImageType f;
-    
+
     const int nargout;
 
     ResultType dist_mat;
-    
+
     IndexType idx_segment;
-    
+
     IndexType idx_predecessor;
-    
+
     std::priority_queue<queue_elem_type,std::vector<queue_elem_type>, PointCmpND> Q;
 
     std::vector<bool> inheap;
@@ -1164,22 +1164,22 @@ namespace image
   octave_value_list do_graydist (const ImageType& image, int nargout, Args...args)
   {
     const ImageType im = image.squeeze();
-    
+
     octave_value_list retval;
 
     if (im.ndims () <= 2)
       retval = GrayDist2D<ResultType, IndexType, ImageType>(im, nargout, args...).get_result ();
     else
       retval = GrayDistND<ResultType, IndexType, ImageType>(im, nargout, args...).get_result ();
-    
+
     retval(0) = retval(0).reshape(image.dims ());
-    
+
     if (nargout >= 2)
       retval(1) = retval(1).reshape(image.dims ());
-    
+
     if (nargout >= 3)
       retval(2) = retval(2).reshape(image.dims ());
-    
+
     return retval;
   }
 
@@ -1232,7 +1232,7 @@ namespace image
           error ("invalid type for argument number %s", std::to_string (n+1).c_str ());
       }
   }
-  
+
   template <typename IndexType>
   octave_value_list dispatch (const octave_value_list& args, int nargout)
   {
@@ -1314,7 +1314,7 @@ The cost of each step in GWD is computed as:@*
 
 where  I(x) is the gray value of the point x and SpatialDistance(pq) shows the spatial
 distance between points p and its neighbor q.@*
-SpatialDistance differs based on the chosen distance metric @var{METHOD} that is one of "chessboard"(default)| "cityblock" | "quasi-euclidean". 
+SpatialDistance differs based on the chosen distance metric @var{METHOD} that is one of "chessboard"(default)| "cityblock" | "quasi-euclidean".
 In a 2D image the spatial distance between the center pixel p and its 8 neighbors is computed as:
 
 @table @asis
@@ -1351,7 +1351,7 @@ The type of @var{idx} and @var{pred} depends on the size of the image. For an im
 @end deftypefn)helpdoc")
 {
 
-  
+
   octave_idx_type nargin = args.length ();
 
   if (nargin < 2 || nargin > 4)
