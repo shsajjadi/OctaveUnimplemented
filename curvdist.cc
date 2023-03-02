@@ -990,7 +990,7 @@ namespace image
       for (octave_idx_type k = 0 ;k < dims.length(); k++)
         {
           sz = sz/dims(k);
-          for (octave_idx_type pad : {1, dims(k)})
+          for (octave_idx_type pad : {octave_idx_type (1), dims(k)})
             {
               bounds[k] = {pad-1, pad};
 
