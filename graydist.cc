@@ -448,8 +448,6 @@ namespace image
     {
       const octave_idx_type dim1 = f.dim1();
 
-      const octave_idx_type dim2 = f.dim2();
-
       typename ResultType::element_type* dist = dist_mat.fortran_vec ();
 
       bool only_direct_neghbors = method == distance_type::cityblock;
@@ -1231,6 +1229,8 @@ namespace image
         else
           error ("invalid type for argument number %s", std::to_string (n+1).c_str ());
       }
+
+    return {};
   }
 
   template <typename IndexType>
@@ -1359,7 +1359,7 @@ The type of @var{idx} and @var{pred} depends on the size of the image. For an im
 
   octave_value im = args(0);
 
-  if (im.numel () <= 0xFFFFFFFF)
+  if (static_cast<unsigned long long> (im.numel ()) <= 0xFFFFFFFF)
     return image::dispatch<uint32NDArray>(args, nargout);
   else
     return image::dispatch<uint64NDArray>(args, nargout);
