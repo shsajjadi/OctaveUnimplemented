@@ -1350,7 +1350,7 @@ where sq2 is equal to sqrt(2).
 The type of @var{T} is double if the type of @var{I} is double. For other input types the type of output is single.@*
 The type of @var{idx} and @var{pred} depends on the size of the image. For an image of size less than 2^32 it is 'uint32' .For larger images it is 'uint64'.
 
-[1] Fouard C., Gedda M. (2006) An Objective Comparison Between Gray Weighted Distance Transforms and Weighted Distance Transforms on Curved Spaces. In: Kuba A., Nyúl L.G., Palágyi K. (eds) Discrete Geometry for Computer Imagery. DGCI 2006. Lecture Notes in Computer Science, vol 4245. Springer, Berlin, Heidelberg.
+[1] Fouard C., Gedda M. (2006) An Objective Comparison Between Gray Weighted Distance Transforms and Weighted Distance Transforms on Curved Spaces. In: Kuba A., NyÃºl L.G., PalÃ¡gyi K. (eds) Discrete Geometry for Computer Imagery. DGCI 2006. Lecture Notes in Computer Science, vol 4245. Springer, Berlin, Heidelberg.
 
 @seealso{bwdist, graydist}
 @end deftypefn)helpdoc")
