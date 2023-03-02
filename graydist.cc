@@ -423,7 +423,7 @@ namespace image
 
               if (v >= 0 && v < n && inheap[v])
                 {
-                  typename ResultType::element_type alt = u.second + static_cast<typename ResultType::element_type>(0.5) * (fu + f(v));
+                  typename ResultType::element_type alt = u.second + static_cast<typename ResultType::element_type>(0.5) * (fu + static_cast<typename ResultType::element_type>(f(v)));
 
                   if (alt < dist[v])
                     {
@@ -483,7 +483,7 @@ namespace image
 
                   if (inheap[v])
                     {
-                      typename ResultType::element_type alt = u.second + static_cast<typename ResultType::element_type>(0.5) * (fu + f(v));
+                      typename ResultType::element_type alt = u.second + static_cast<typename ResultType::element_type>(0.5) * (fu + static_cast<typename ResultType::element_type>(f(v)));
 
                       if (alt < dist[v])
                         {
@@ -536,7 +536,7 @@ namespace image
 
                   if (inheap[v])
                     {
-                      typename ResultType::element_type alt = u.second + wei[i] * (fu + f(v));
+                      typename ResultType::element_type alt = u.second + wei[i] * (fu + static_cast<typename ResultType::element_type>(f(v)));
 
                       if (alt < dist[v])
                         {
@@ -1070,7 +1070,7 @@ namespace image
                     {
                       auto vimage = u.imageindex + image_neighbor_idx[i];
 
-                      typename ResultType::element_type alt = u.imageval + (static_cast<typename ResultType::element_type>(.5) * (fu + f(vimage)));
+                      typename ResultType::element_type alt = u.imageval + (static_cast<typename ResultType::element_type>(.5) * (fu + static_cast<typename ResultType::element_type>(f(vimage))));
 
                       if (alt < dist[vimage])
                         {
@@ -1119,7 +1119,7 @@ namespace image
                     {
                       auto vimage = u.imageindex + image_neighbor_idx[i];
 
-                      typename ResultType::element_type alt = u.imageval + wei[i] * (fu + f(vimage));
+                      typename ResultType::element_type alt = u.imageval + wei[i] * (fu + static_cast<typename ResultType::element_type>(f(vimage)));
 
                       if (alt < dist[vimage])
                         {
