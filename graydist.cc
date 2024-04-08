@@ -327,7 +327,7 @@ namespace image
     const std::vector<std::vector<octave_idx_type>>&
     create_offset_to_neighbors(octave_idx_type dim1, bool only_direct_neghbors = false)
     {
-      static const std::vector<std::vector<octave_idx_type>> offset_4
+      std::vector<std::vector<octave_idx_type>> offset_4
         {
           {},
           {1,dim1},
@@ -341,7 +341,7 @@ namespace image
           {-dim1,-1}
         };
 
-      static const std::vector<std::vector<octave_idx_type>> offset_8
+      std::vector<std::vector<octave_idx_type>> offset_8
         {
           {},
           {1,dim1,dim1+1},
