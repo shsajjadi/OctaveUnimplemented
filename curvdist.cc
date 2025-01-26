@@ -307,7 +307,7 @@ namespace image
       return weight_quasi;
     }
 
-    const std::vector<std::vector<octave_idx_type>>&
+    std::vector<std::vector<octave_idx_type>>
     create_offset_to_neighbors(octave_idx_type dim1, bool only_direct_neghbors = false)
     {
       std::vector<std::vector<octave_idx_type>> offset_4
